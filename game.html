@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Дорога Судеб // Чистый Лист</title>
+    <style>
+        body {
+            background-color: #0b0d10;
+            color: #d1dadf;
+            font-family: 'Courier New', Courier, monospace;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        #game-layout {
+            display: flex;
+            gap: 20px;
+            width: 100%;
+            max-width: 1100px;
+        }
+        #terminal {
+            flex: 3;
+            background-color: #11141a;
+            border: 2px solid #b57c32;
+            box-shadow: 0 0 35px rgba(181, 124, 50, 0.2);
+            padding: 20px;
+            border-radius: 8px;
+        }
+        #sidebar {
+            flex: 1.2;
+            background-color: #11141a;
+            border: 2px solid #4a3825;
+            padding: 15px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        #screen-container {
+            width: 100%;
+            height: 320px;
+            border: 1px solid #4a3825;
+            margin-bottom: 15px;
+            border-radius: 4px;
+            background-color: #06070a;
+            position: relative;
+            overflow: hidden;
+        }
+        #screen-illustration {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        #screen-container::after {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 60%, rgba(0, 0, 0, 0.35) 40%);
+            background-size: 100% 4px;
+            z-index: 10;
+            pointer-events: none;
+        }
+        #output {
+            height: 180px;
+            overflow-y: auto;
+            white-space: pre-line;
+            margin-bottom: 15px;
+            border-bottom: 1px dashed #b57c32;
+            padding-bottom: 10px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .buttons-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+        button {
+            background-color: transparent;
+            border: 1px solid #b57c32;
+            color: #dcb382;
+            padding: 10px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 13px;
+            cursor: pointer;
+            text-align: left;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+        button:hover {
+            background-color: #b57c32;
+            color: #11141a;
+            font-weight: bold;
+        }
+        .status-bar {
+            font-size: 11px;
+            color: #9c6e35;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .sidebar-title {
+            font-size: 12px;
+            color: #b57c32;
+            border-bottom: 1px solid #4a3825;
+            padding-bottom: 5px;
+            font-weight: bold;
+            text-align: center;
+        }
+        .inventory-item {
+            font-size: 13px;
+            padding: 5px;
+            border: 1px dashed #4a3825;
+            background-color: #090b0e;
+            border-radius: 4px;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<!-- HTML5 Интернет-плеер для потокового вещания радио -->
+<audio id="bg-music" crossorigin="anonymous" loop></audio>
+
+<div id="game-layout">
+    <div id="terminal">
+        <div class="status-bar">
+            <span id="route-display">МАРШРУТ: СТАРТ</span>
+            <span id="fuel-display">ТОПЛИВО: 100%</span>
+        </div>
+        
+        <div id="screen-container">
+            <img id="screen-illustration" src="" alt="Экран навигатора">
+        </div>
+        <div id="output">=== ЦЕНТР УПРАВЛЕНИЯ БОРТОВЫМИ СИСТЕМАМИ ===</div>
+        <div class="buttons-container" id="choices"></div>
+    </div>
+
+    <div id="sidebar">
+        <div class="sidebar-title">🎒 ИНВЕНТАРЬ МАШИНЫ</div>
+        <div id="inv-fuel" class="inventory-item">⛽ Канистры: 1</div>
+        <div id="inv-ring" class="inventory-item">💍 Перстень: Нет</div>
+        <div id="inv-amulet" class="inventory-item" style="color: #666;">🗿 Древний оберег: Нет</div>
+        <button id="btn-use-fuel" onclick="useFuelItem()">Использовать канистру</button>
+        
+        <div class="sidebar-title" style="margin-top:10px;">📻 ОНЛАЙН МАГНИТОЛА</div>
+        <div id="radio-track" class="inventory-item" style="color: #33ff66; font-size:11px; text-align:center;">📻 Приемник выключен</div>
+    </div>
+</div>
+
+<script>
+    let fuel = 100;
+    let inventory = { canisters: 1, ring: false, amulet: false };
+    let currentRouteText = "Старт";
+
+    const outputDiv = document.getElementById('output');
+    const choicesDiv = document.getElementById('choices');
+    const fuelDisplay = document.getElementById('fuel-display');
+    const routeDisplay = document.getElementById('route-display');
+    const screenIllustration = document.getElementById('screen-illustration');
+    const radioTrack = document.getElementById('radio-track');
+    const audioPlayer = document.getElementById('bg-music');
+
+    // Прямые, вечные HTTPS-адреса для графики
+    const images = {
+        highway: "picsum.photos", 
+        village: "picsum.photos", 
+        spb: "picsum.photos",     
+        forest: "picsum.photos M/800/400",  
+        town: "picsum.photos",    
+        water: "picsum.photos"
+    };
+
+    // Стабильные, глобальные стримы онлайн-радиовещания
+    const streams = {
+        rock: "hostingradio.ru", // НАШЕ Радио
+        postpunk: "streamr.ru",         // Постпанк / Нью-вейв волна
+        ambient: "streamr.ru"       // Мистический Эмбиент
+    };
+
+    function playMusic(streamUrl) {
+        if (audioPlayer.src !== streamUrl) {
+            audioPlayer.src = streamUrl;
+            audioPlayer.volume = 0.3;
+            audioPlayer.play().catch(e => console.log("Блокировка звука снимется при старте игры"));
+        }
+    }
+
+    function updateInventoryUI() {
+        document.getElementById("inv-fuel").innerHTML = `⛽ Канистры: ${inventory.canisters}`;
+        document.getElementById("inv-ring").innerHTML = `💍 Перстень: ${inventory.ring ? 'Есть' : 'Нет'}`;
+        document.getElementById("inv-ring").style.color = inventory.ring ? "#dcb382" : "#666";
+        document.getElementById("inv-amulet").innerHTML = `🗿 Оберег: ${inventory.amulet ? 'Есть' : 'Нет'}`;
+        document.getElementById("inv-amulet").style.color = inventory.amulet ? "#4df2ff" : "#666";
+    }
+
+    function useFuelItem() {
+        if (inventory.canisters > 0) {
+            inventory.canisters--;
+            fuel = Math.min(100, fuel + 30);
+            fuelDisplay.textContent = `ТОПЛИВО: ${fuel}%`;
+            updateInventoryUI();
+        }
+    }
+
+    const questData = {
+        start: {
+            text: "Вы — Дмитрий. Путешествие начинается. Вы с Еленочкой выезжаете из Рязани, навигатор строит путь до Санкт-Петербурга. На выезде из Рязанской области навигатор замечает съезд к старой деревне Ухорское.\n\nКуда свернете?",
+            image: images.highway,
+            track: "📻 НАШЕ РАДИО // РОК ТРАССА",
+            stream: streams.rock,
+            route: "РЯЗАНЬ -> ПЕТЕРБУРГ",
+            choices: [
+                { text: "🛡️ На полной скорости мчаться по М-11 прямо в Питер (-20% топлива)", next: "spb_fast" },
+                { text: "🛖 Свернуть с шоссе к глухой деревне Ухорское (-15% топлива)", next: "village_ukhorskoe" }
+            ]
+        },
+        village_ukhorskoe: {
+            text: "Ухорское встречает вас черными пустыми окнами изб. Посреди площади стоит заброшенный колодец. Еленочка находит в одном из полусгнивших комодов канистру бензина. Из колодца начинает подниматься пар. Нужно уезжать.",
+            image: images.village,
+            track: "📻 ВЕБ-СТРИМ // МИСТИЧЕСКИЙ ЭМБИЕНТ",
+            stream: streams.ambient,
+            fuelCost: 15,
+            route: "ДЕРЕВНЯ УХОРСКОЕ",
+            onEnter: () => { inventory.canisters++; updateInventoryUI(); },
+            choices: [
+                { text: "🚗 Экстренно рвануть обратно на шоссе до Санкт-Петербурга (-20% топлива)", next: "spb_fast" }
+            ]
+        },
+        spb_fast: {
+            text: "Санкт-Петербург встречает вас неоновыми огнями и туманом. Вы гуляете по разводным мостам.\n\nПока вы стоите на светофоре, Еленочка задумчиво смотрит на Неву.\n\nО чем вы поговорите?",
+            image: images.spb,
+            track: "📻 RETRO FM // НОЧНОЙ ПОСТПАНК",
+            stream: streams.postpunk,
+            fuelCost: 20,
+            route: "ПЕТЕРБУРГ -> В. НОВГОРОД",
+            choices: [
+                { text: "💬 Обсудить легенды о призраках Михайловского замка", next: "dialogue_ghosts" },
+                { text: "💬 Сказать Еленочке, как сильно вы её любите", next: "dialogue_love" }
+            ]
+        },
+        dialogue_ghosts: {
+            text: "Еленочка слегка вздрагивает, но внимательно слушает. Навигатор тем временем подсвечивает интересное место на пути к Великому Новгороду — древний карельский мегалит 'Чертов Стул' неподалеку от трассы.\n\nВаше решение?",
+            image: images.spb,
+            choices: [
+                { text: "🗺️ Поехать по стандартной трассе до Новгорода (-30% топлива)", next: "novgorod_main" },
+                { text: "🗿 Заехать к карельскому мегалиту 'Чертов Стул' (-20% топлива)", next: "chertov_stul" }
+            ]
+        },
+        dialogue_love: {
+            text: "Еленочка нежно улыбается и прижимается к вашему плечу. Атмосфера в машине становится теплой, несмотря на сырость за окном. Впереди — перегон до Новгорода, но навигатор предлагает съехать к мегалиту 'Чертов Стул'.\n\nКуда едем?",
+            image: images.spb,
+            choices: [
+                { text: "🗺️ Поехать по стандартной трассе до Новгорода (-30% топлива)", next: "novgorod_main" },
+                { text: "🗿 Заехать к карельскому мегалиту 'Чертов Стул' (-20% топлива)", next: "chertov_stul" }
+            ]
+        },
+        chertov_stul: {
+            text: "Мрачное скальное плато посреди карельских сосен. Между камней Еленочка находит древний костяной оберег, покрытый рунами. Вы прыгаете в салон и берете курс на Новгород.",
+            image: images.forest,
+            track: "📻 ВЕБ-СТРИМ // МИСТИЧЕСКИЙ ЭМБИЕНТ",
+            stream: streams.ambient,
+            fuelCost: 20,
+            route: "МЕГАЛИТ ЧЕРТОВ СТУЛ",
+            onEnter: () => { inventory.amulet = true; updateInventoryUI(); },
+            choices: [
+                { text: "🚗 Ехать в Великий Новгород (-15% топлива)", next: "novgorod_main" }
+            ]
+        },
+        novgorod_main: {
+            text: "Великий Новгород. Кремль, река Волхов. Впереди — затяжной перегон до Рыбинска.\n\nВНЕЗАПНО: Под колеса попадает острый кусок арматуры! Правое переднее колесо полностью спущено!\n\nЧто будете делать?",
+            image: images.town,
+            track: "📻 ВЕБ-СТРИМ // МИСТИЧЕСКИЙ ЭМБИЕНТ",
+            stream: streams.ambient,
+            fuelCost: 30,
+            route: "В. НОВГОРОД -> РЫБИНСК",
+            choices: [
+                { text: "🛠️ Достать домкрат и поменять запаску самостоятельно (-10% топлива)", next: "repair_self" },
+                { text: "🙋 Попытаться дойти пешком до ближайшей глухой деревни за помощью", next: "repair_village" }
+            ]
+        },
+        repair_self: {
+            text: "Под проливным дождем Дмитрий за 20 минут меняет колесо. Руки замерзли, но машина снова на ходу. Навигатор предлагает съехать к затопленным берегам бывшей Мологи.\n\nКак поступите?",
+            image: images.town,
+            choices: [
+                { text: "⚡ Идти напрямую на Рыбинск сквозь грозу (-25% топлива)", next: "rybinsk_highway" },
+                { text: "🚤 Свернуть к скрытому причалу у затопленного города Молога (-20% топлива)", next: "mologa_ruins" }
+            ]
+        },
+        repair_village: {
+            text: "Вы идете по темной лесной дороге, но деревня оказывается полностью вымершей. Вам приходится вернуться и менять колесо самому, потеряв слишком много сил и времени. Впереди — развилка у Мологи.\n\nКуда дальше?",
+            image: images.town,
+            onEnter: () => { fuel -= 15; }, 
+            choices: [
+                { text: "⚡ Идти напрямую на Рыбинск сквозь грозу (-25% топлива)", next: "rybinsk_highway" },
+                { text: "🚤 Свернуть к скрытому причалу у затопленного города Молога (-20% топлива)", next: "mologa_ruins" }
+            ]
+        },
+        mologa_ruins: {
+            text: "Туманный берег водохранилища. Из воды торчит верхушка старой колокольни Мологи. На мостках лежит старинный медный перстень. Вы забираете его.",
+            image: images.water,
+            track: "📻 ВЕБ-СТРИМ // МИСТИЧЕСКИЙ ЭМБИЕНТ",
+            stream: streams.ambient,
+            fuelCost: 20,
+            route: "РУИНЫ МОЛОГИ",
+            onEnter: () => { inventory.ring = true; updateInventoryUI(); },
+            choices: [
+                { text: "🔥 (Требуется Оберег) Активировать карельский амулет", next: "mologa_escape_amulet" },
+                { text: "🏃 Просто бежать к машине и давить на газ (-25% топлива)", next: "rybinsk_highway" }
+            ]
+        },
+        mologa_escape_amulet: {
+            text: "Проверка защитного снаряжения.",
+            image: images.water,
+            onEnter: function() {
+                if (inventory.amulet) {
+                    this.text = "Костяной амулет вспыхивает ярким синим светом. Водяные силуэты растворяются, освобождая дорогу.";
+                    this.choices = [{ text: "  Продолжить путь в Рыбинск", next: "rybinsk_highway" }];
+                } else {
+                    this.text = "У вас нет амулета! Вы тратите драгоценный бензин, чтобы вырваться из ила.";
+                    fuel -= 20;
+                    this.choices = [{ text: "  Вырваться на трассу до Рыбинска (-25% топлива)", next: "rybinsk_highway" }];
+                }
+            },
+            choices: []
+        },
+        rybinsk_highway: {
+            text: "Вы добираетесь до Рыбинска. Огромное водохранилище штормит. Навигатор строить путь до Твери.",
+            image: images.water,
+            track: "📻 НАШЕ РАДИО // РУССКИЙ РОК",
+            stream: streams.rock,
+            fuelCost: 25,
+            choices: [
+                { text: "  Ехать в Тверь по окружным безопасным дорогам (-35% топлива)", next: "tver_safe" }
+            ]
+        },
+        tver_safe: {
+            text: "Тверь. Волга снова спокойна. Вы с Еленочкой выходите на финишную прямую до Ярославля — финальной точки вашего свадебного путешествия.",
+            image: images.town,
+            track: "📻 НАШЕ РАДИО // РУССКИЙ РОК",
+            stream: streams.rock,
+            choices: [
+                { text: "  Начать финальный разгон до Ярославля (-25% топлива)", next: "ending_good_check" }
+            ]
+        },
+        ending_good_check: {
+            text: "Вы смотрите вперед.",
+            image: images.town,
+            onEnter: function() {
+                if (inventory.ring) {
+                    this.text = "💀 ПЛОХАЯ КОНЦОВКА: Пленники Волхова\nВы доехали до Ярославля, но Еленочка замолчала. Её глаза стали полностью черными. Перстень удержал тварей, но заложил её душу бездне.";
+                    screenIllustration.style.display = "none";
+                    audioPlayer.src = "";
+                } else {
+                    this.text = "🎉 ХОРОШАЯ КОНЦОВКА: Рассвет над Волгой\nВы въезжаете в утренний, залитый золотым солнцем Ярославль! Свадебное путешествие благополучно завершено. Вы счастливы и свободны!";
+                    screenIllustration.src = images.highway;
+                }
+            },
+            choices: []
+        }
+    };
+
+    function renderNode(nodeKey) {
+        if (nodeKey === "start_reset") {
+            fuel = 100; inventory.canisters = 1; inventory.ring = false; inventory.amulet = false;
+            updateInventoryUI();
+            fuelDisplay.textContent = "ТОПЛИВО: 100%"; nodeKey = "start";
+        }
+
+        const node = questData[nodeKey];
+        if (node.onEnter) node.onEnter();
+        
+        if (node.fuelCost) {
+            fuel -= node.fuelCost;
+            if (fuel < 0) fuel = 0;
+            fuelDisplay.textContent = `ТОПЛИВО: ${fuel}%`;
+        }
+
+        if (node.route) routeDisplay.textContent = `МАРШРУТ: ${node.route}`;
+        if (node.track) radioTrack.textContent = node.track;
+        if (node.stream) playMusic(node.stream);
+
+        if (fuel <= 0 && !nodeKey.startsWith("ending_") && !nodeKey.endsWith("_check")) {
+            outputDiv.textContent = "🚨 КРИТИЧЕСКАЯ ОШИБКА: Топливо закончилось на темной трассе.";
+            screenIllustration.style.display = "none";
+            choicesDiv.innerHTML = '<button onclick="renderNode(\'start_reset\')">🔄 Начать заново</button>';
+            return;
+        }
+
+        if (node.image && !nodeKey.endsWith("_check")) {
+            screenIllustration.src = node.image;
+            screenIllustration.style.display = "block";
+        }
+
+        outputDiv.textContent = node.text;
+        choicesDiv.innerHTML = '';
+
+        if (nodeKey.startsWith("ending_") || nodeKey === "ending_good_check") {
+            choicesDiv.innerHTML = '<button onclick="renderNode(\'start_reset\')">🔄 Начать новое путешествие</button>';
+            return;
+        }
+
+        node.choices.forEach(choice => {
+            const btn = document.createElement('button');
+            btn.textContent = choice.text;
+            btn.onclick = () => renderNode(choice.next);
+            choicesDiv.appendChild(btn);
+        });
+    }
+
+    function showStartScreen() {
+        screenIllustration.style.display = "none";
+        outputDiv.textContent = "Система навигации готова к интернет-запуску.";
+        choicesDiv.innerHTML = '<button onclick="renderNode(\'start_reset\')">🔑 ЗАВЕСТИ ДВИГАТЕЛЬ И ПОДКЛЮЧИТЬ ОНЛАЙН-РАДИО</button>';
+    }
+
+    showStartScreen();
+</script>
+
+</body>
+</html>
