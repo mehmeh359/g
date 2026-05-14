@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Дорога Судеб // Чистый Лист</title>
+    <title>Дорога Судеб // Финал</title>
     <style>
         body {
             background-color: #0b0d10;
@@ -38,7 +38,7 @@
         }
         #screen-container {
             width: 100%;
-            height: 320px;
+            height: 300px;
             border: 1px solid #4a3825;
             margin-bottom: 15px;
             border-radius: 4px;
@@ -122,7 +122,6 @@
 </head>
 <body>
 
-<!-- HTML5 Интернет-плеер для потокового вещания радио -->
 <audio id="bg-music" crossorigin="anonymous" loop></audio>
 
 <div id="game-layout">
@@ -135,7 +134,7 @@
         <div id="screen-container">
             <img id="screen-illustration" src="" alt="Экран навигатора">
         </div>
-        <div id="output">=== ЦЕНТР УПРАВЛЕНИЯ БОРТОВЫМИ СИСТЕМАМИ ===</div>
+        <div id="output">=== СИСТЕМА ИНИЦИАЛИЗАЦИИ ИНТЕРНЕТ-СЕРВЕРА ===</div>
         <div class="buttons-container" id="choices"></div>
     </div>
 
@@ -146,8 +145,8 @@
         <div id="inv-amulet" class="inventory-item" style="color: #666;">🗿 Древний оберег: Нет</div>
         <button id="btn-use-fuel" onclick="useFuelItem()">Использовать канистру</button>
         
-        <div class="sidebar-title" style="margin-top:10px;">📻 ОНЛАЙН МАГНИТОЛА</div>
-        <div id="radio-track" class="inventory-item" style="color: #33ff66; font-size:11px; text-align:center;">📻 Приемник выключен</div>
+        <div class="sidebar-title" style="margin-top:10px;">📻 ОНЛАЙН-РАДИО</div>
+        <div id="radio-track" class="inventory-item" style="color: #33ff66; font-size:11px; text-align:center;">📻 Поиск веб-сигнала...</div>
     </div>
 </div>
 
@@ -164,28 +163,28 @@
     const radioTrack = document.getElementById('radio-track');
     const audioPlayer = document.getElementById('bg-music');
 
-    // Прямые, вечные HTTPS-адреса для графики
+    // Прямые, рабочие ссылки на стабильные интернет-изображения
     const images = {
-        highway: "picsum.photos", 
-        village: "picsum.photos", 
-        spb: "picsum.photos",     
-        forest: "picsum.photos M/800/400",  
-        town: "picsum.photos",    
-        water: "picsum.photos"
+        highway: "unsplash.com", 
+        village: "unsplash.com", 
+        spb: "unsplash.com",     
+        forest: "unsplash.com",  
+        town: "unsplash.com",    
+        water: "unsplash.com"
     };
 
-    // Стабильные, глобальные стримы онлайн-радиовещания
+    // Прямые HTTPS-потоки официального онлайн-вещания радиостанций
     const streams = {
-        rock: "hostingradio.ru", // НАШЕ Радио
-        postpunk: "streamr.ru",         // Постпанк / Нью-вейв волна
-        ambient: "streamr.ru"       // Мистический Эмбиент
+        rock: "hostingradio.ru", 
+        postpunk: "streamr.ru",
+        ambient: "hostingradio.ru"
     };
 
     function playMusic(streamUrl) {
         if (audioPlayer.src !== streamUrl) {
             audioPlayer.src = streamUrl;
-            audioPlayer.volume = 0.3;
-            audioPlayer.play().catch(e => console.log("Блокировка звука снимется при старте игры"));
+            audioPlayer.volume = 0.35;
+            audioPlayer.play().catch(e => console.log("Клик разблокирует аудио"));
         }
     }
 
@@ -210,7 +209,7 @@
         start: {
             text: "Вы — Дмитрий. Путешествие начинается. Вы с Еленочкой выезжаете из Рязани, навигатор строит путь до Санкт-Петербурга. На выезде из Рязанской области навигатор замечает съезд к старой деревне Ухорское.\n\nКуда свернете?",
             image: images.highway,
-            track: "📻 НАШЕ РАДИО // РОК ТРАССА",
+            track: "📻 НАШЕ РАДИО // РУССКИЙ РОК",
             stream: streams.rock,
             route: "РЯЗАНЬ -> ПЕТЕРБУРГ",
             choices: [
@@ -221,7 +220,7 @@
         village_ukhorskoe: {
             text: "Ухорское встречает вас черными пустыми окнами изб. Посреди площади стоит заброшенный колодец. Еленочка находит в одном из полусгнивших комодов канистру бензина. Из колодца начинает подниматься пар. Нужно уезжать.",
             image: images.village,
-            track: "📻 ВЕБ-СТРИМ // МИСТИЧЕСКИЙ ЭМБИЕНТ",
+            track: "📻 RECORD // МИСТИЧЕСКИЙ ЭМБИЕНТ",
             stream: streams.ambient,
             fuelCost: 15,
             route: "ДЕРЕВНЯ УХОРСКОЕ",
@@ -233,7 +232,7 @@
         spb_fast: {
             text: "Санкт-Петербург встречает вас неоновыми огнями и туманом. Вы гуляете по разводным мостам.\n\nПока вы стоите на светофоре, Еленочка задумчиво смотрит на Неву.\n\nО чем вы поговорите?",
             image: images.spb,
-            track: "📻 RETRO FM // НОЧНОЙ ПОСТПАНК",
+            track: "📻 ИНДИ-ВОЛНА // НОЧНОЙ ПОСТПАНК",
             stream: streams.postpunk,
             fuelCost: 20,
             route: "ПЕТЕРБУРГ -> В. НОВГОРОД",
@@ -261,7 +260,7 @@
         chertov_stul: {
             text: "Мрачное скальное плато посреди карельских сосен. Между камней Еленочка находит древний костяной оберег, покрытый рунами. Вы прыгаете в салон и берете курс на Новгород.",
             image: images.forest,
-            track: "📻 ВЕБ-СТРИМ // МИСТИЧЕСКИЙ ЭМБИЕНТ",
+            track: "📻 RECORD // МИСТИЧЕСКИЙ ЭМБИЕНТ",
             stream: streams.ambient,
             fuelCost: 20,
             route: "МЕГАЛИТ ЧЕРТОВ СТУЛ",
@@ -273,7 +272,7 @@
         novgorod_main: {
             text: "Великий Новгород. Кремль, река Волхов. Впереди — затяжной перегон до Рыбинска.\n\nВНЕЗАПНО: Под колеса попадает острый кусок арматуры! Правое переднее колесо полностью спущено!\n\nЧто будете делать?",
             image: images.town,
-            track: "📻 ВЕБ-СТРИМ // МИСТИЧЕСКИЙ ЭМБИЕНТ",
+            track: "📻 RECORD // МИСТИЧЕСКИЙ ЭМБИЕНТ",
             stream: streams.ambient,
             fuelCost: 30,
             route: "В. НОВГОРОД -> РЫБИНСК",
@@ -291,7 +290,7 @@
             ]
         },
         repair_village: {
-            text: "Вы идете по темной лесной дороге, но деревня оказывается полностью вымершей. Вам приходится вернуться и менять колесо самому, потеряв слишком много сил и времени. Впереди — развилка у Мологи.\n\nКуда дальше?",
+            text: "Вы идете по темной лесной дороге, но деревня оказывается полностью вымершей. Вам приходится вернуться и менять колесо самому, потеряв силы и времени. Впереди — развилка у Мологи.\n\nКуда дальше?",
             image: images.town,
             onEnter: () => { fuel -= 15; }, 
             choices: [
@@ -302,7 +301,7 @@
         mologa_ruins: {
             text: "Туманный берег водохранилища. Из воды торчит верхушка старой колокольни Мологи. На мостках лежит старинный медный перстень. Вы забираете его.",
             image: images.water,
-            track: "📻 ВЕБ-СТРИМ // МИСТИЧЕСКИЙ ЭМБИЕНТ",
+            track: "📻 RECORD // МИСТИЧЕСКИЙ ЭМБИЕНТ",
             stream: streams.ambient,
             fuelCost: 20,
             route: "РУИНЫ МОЛОГИ",
@@ -413,8 +412,8 @@
 
     function showStartScreen() {
         screenIllustration.style.display = "none";
-        outputDiv.textContent = "Система навигации готова к интернет-запуску.";
-        choicesDiv.innerHTML = '<button onclick="renderNode(\'start_reset\')">🔑 ЗАВЕСТИ ДВИГАТЕЛЬ И ПОДКЛЮЧИТЬ ОНЛАЙН-РАДИО</button>';
+        outputDiv.textContent = "Система навигации готова к интернет-запуску через GitHub.";
+        choicesDiv.innerHTML = '<button onclick="renderNode(\'start_reset\')">🔑 ЗАВЕСТИ ДВИГАТЕЛЬ И ВКЛЮЧИТЬ ОНЛАЙН-РАДИО</button>';
     }
 
     showStartScreen();
